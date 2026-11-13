@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { CalendarIcon, FlameIcon, HeartIcon, HomeIcon, SparkIcon } from './Icons'
 import { useStore } from '../lib/store'
+import ConfirmButton from './ConfirmButton'
 
 const links = [
   { to: '/', label: 'Home', icon: <HomeIcon />, end: true },
@@ -40,12 +41,8 @@ export default function Sidebar() {
           <span className="nav-chip">LinkedIn</span>
         </div>
         <div style={{ display: 'flex', gap: 14, paddingTop: 10 }}>
-          <button className="nav-small" onClick={() => confirm('Replace everything with the sample brand and posts?') && loadDemo()}>
-            Load sample data
-          </button>
-          <button className="nav-small" onClick={() => confirm('Clear your brand and all posts?') && clearAll()}>
-            Start fresh
-          </button>
+          <ConfirmButton className="nav-small" onConfirm={loadDemo}>Load sample data</ConfirmButton>
+          <ConfirmButton className="nav-small" onConfirm={clearAll}>Start fresh</ConfirmButton>
         </div>
       </div>
     </nav>

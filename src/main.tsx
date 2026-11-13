@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import './styles.css'
 import { StoreProvider } from './lib/store'
 import Sidebar from './components/Sidebar'
@@ -11,10 +11,13 @@ import NewPost from './pages/NewPost'
 import Create from './pages/Create'
 import Schedule from './pages/Schedule'
 
+// The preview build runs inside a frame that can't change its address, so it keeps the page address in memory.
+const Router = import.meta.env.VITE_PREVIEW ? MemoryRouter : BrowserRouter
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StoreProvider>
-      <BrowserRouter>
+      <Router>
         <div className="shell">
           <Sidebar />
           <main className="main">
@@ -29,7 +32,7 @@ createRoot(document.getElementById('root')!).render(
             </Routes>
           </main>
         </div>
-      </BrowserRouter>
+      </Router>
     </StoreProvider>
   </StrictMode>,
 )

@@ -8,6 +8,7 @@ import { nudgeVersion, writePost } from '../lib/generate'
 import { addDays, atTime, dateInput, timeOf } from '../lib/dates'
 import { BackIcon, CalendarIcon, XIcon } from '../components/Icons'
 import { useToast } from '../components/Toast'
+import ConfirmButton from '../components/ConfirmButton'
 
 const NUDGES = ['Shorter', 'Funnier', 'More about price', 'Add a call to action']
 const CREATOR_STEPS: CreatorStatus[] = ['Not sent', 'Sent to creator', 'Filming', 'Ready to review']
@@ -99,7 +100,7 @@ function Editor({ post }: { post: Post }) {
           <span><span className="tag" style={{ background: info.color, border: '1.5px solid var(--ink)' }}>{info.title}</span> {post.status === 'scheduled' && <span className="tag" style={{ background: 'var(--green)' }}>Scheduled</span>}</span>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => confirm('Delete this post?') && (deletePost(post.id), navigate('/schedule'))}>Delete</button>
+          <ConfirmButton className="btn" ask="Click again to delete" onConfirm={() => { deletePost(post.id); navigate('/schedule') }}>Delete</ConfirmButton>
           <button className="btn" onClick={() => { set({ status: 'draft', when: null }); show('Saved as a draft') }}>Save draft</button>
         </div>
       </header>
