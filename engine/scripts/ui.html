@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trend Remix</title>
+<style>
+:root { --bg: #faf8f3; --panel: #fff; --ink: #10100f; --mute: #6b6a66; --line: #e6e2d8; --hi: #ffe14d; --ok: #1a9c5b; --bad: #ff3b30; --log: #10100f; --logink: #e8e6df; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121211; --panel: #1b1b1a; --ink: #f1efe9; --mute: #9a988f; --line: #2c2b28; --log: #0a0a09; } }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); display: grid; grid-template: "head head" auto "side main" 1fr "log log" auto / 340px 1fr; height: 100vh; }
+header { grid-area: head; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--line); }
+header h1 { font-size: 16px; margin: 0; }
+#status { margin-left: auto; color: var(--mute); }
+aside { grid-area: side; overflow: auto; border-right: 1px solid var(--line); padding: 14px; }
+main { grid-area: main; overflow: auto; padding: 18px 22px 40px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--mute); margin: 18px 0 8px; }
+h2:first-child { margin-top: 0; }
+.row { display: flex; gap: 6px; }
+input, select, textarea { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+input[type=number] { width: 64px; }
+.row input, textarea { flex: 1; }
+.row input[type=number] { flex: none; }
+a { color: inherit; }
+button { font: inherit; font-weight: 600; background: var(--ink); color: var(--bg); border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+button:disabled { opacity: .4; cursor: default; }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.item { display: flex; gap: 8px; align-items: center; padding: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
+.item.on { outline: 2px solid var(--ink); }
+.item img { width: 44px; height: 78px; object-fit: cover; border-radius: 4px; flex: none; }
+.item .t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.item small, small { color: var(--mute); }
+.vids { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.vids figure { margin: 0; }
+.vids video { height: 440px; max-width: 100%; background: #000; border-radius: 8px; display: block; }
+.vids figcaption { color: var(--mute); margin-top: 4px; }
+.steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.step { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.step b::before { content: "○ "; color: var(--mute); }
+.step.done b::before { content: "● "; color: var(--ok); }
+.step small { min-height: 2.9em; }
+.tabs { display: flex; gap: 4px; margin: 20px 0 10px; border-bottom: 1px solid var(--line); }
+.tabs button { background: none; color: var(--mute); border-radius: 0; border-bottom: 2px solid transparent; }
+.tabs button.on { color: var(--ink); border-color: var(--ink); }
+pre.doc { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; font: 13px/1.5 ui-monospace, monospace; }
+.shot { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.shot .n { font-weight: 700; font-size: 18px; }
+.shot img { max-width: 100%; max-height: 180px; border-radius: 6px; display: block; margin-bottom: 6px; }
+.shot .line { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+.shot .line span { width: 60px; color: var(--mute); flex: none; }
+.shot .line input:last-child { flex: 1; }
+.shot .meta { color: var(--mute); font-size: 12px; margin: 4px 0; }
+#log { grid-area: log; background: var(--log); color: var(--logink); height: 190px; overflow: auto; margin: 0; padding: 10px 18px; font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; resize: vertical; }
+.empty { color: var(--mute); padding: 40px 0; }
+@media (max-width: 800px) { body { grid-template: "head" auto "side" auto "main" 1fr "log" auto / 1fr; height: auto; } aside { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header><h1>Trend Remix</h1><span id="status">idle</span><button id="stop" class="ghost" hidden>Stop</button></header>
+
+<aside>
+  <h2>Find</h2>
+  <div class="row"><input id="tags" placeholder="hashtags"><button id="find">Find</button></div>
+  <h2>Or paste a URL</h2>
+  <div class="row"><input id="url" placeholder="https://youtube.com/shorts/…"><button id="dl">Download</button></div>
+  <h2>Jobs</h2>
+  <div id="jobs" class="list"></div>
+  <h2>Candidates</h2>
+  <div id="cands" class="list"></div>
+</aside>
+
+<main id="main"><p class="empty">Pick a job, or find or paste a video to start one.</p></main>
+
+<pre id="log"></pre>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const num = (n) => n == null ? '?' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : n;
+const pad = (n) => String(n).padStart(2, '0');
+const api = async (p, opts) => { const r = await fetch(p, opts); if (!r.ok) throw new Error(await r.text()); return r.json(); };
+let state, job, tab = 'shots', busy = false;
+const brand = () => localStorage.getItem('brand') || state?.brands[0];
+
+async function go(step, extra = {}) {
+  try { await api('/api/run', { method: 'POST', body: JSON.stringify({ step, job: job?.id, brand: brand(), ...extra }) }); }
+  catch (e) { alert(e.message); }
+}
+
+const STEPS = [
+  ['source', 'download', 'Download', 'Video, frames, cuts and transcript.'],
+  ['breakdown', 'analyse', 'Breakdown', 'Claude writes the shot-by-shot breakdown.'],
+  ['script', 'script', 'Script', 'Claude writes the remix script for the brand.'],
+  ['plan', 'plan', 'Shot plan', 'Claude writes shots.json: timing, lines, sound.'],
+  ['scene', 'scene', '3D scene', 'Claude writes and checks scene.js.'],
+  ['voice', 'voice', 'Voice + sfx', 'ElevenLabs. Only makes missing files, but uses credits.'],
+  ['draft', 'draft', 'Render 240p', 'Quick draft to out/video-lo.mp4.'],
+  ['fix', 'fix', 'Self-fix', 'Claude compares with the original, up to 3 rounds.'],
+  ['final', 'final', 'Render full', 'Full size to out/video.mp4. Slow.'],
+];
+
+async function loadState() {
+  state = await api('/api/state');
+  $('#jobs').innerHTML = state.jobs.map((j) => `<div class="item ${job?.id === j.id ? 'on' : ''}" data-job="${j.id}"><div><div class="t">${esc(j.title || j.id)}</div><small>${j.id}</small></div></div>`).join('') || '<small>None yet.</small>';
+  $('#cands').innerHTML = state.candidates.map((c, i) => `<div class="item" title="${esc(c.title)}">
+    <img src="${esc(c.thumbnail)}" loading="lazy" alt=""><div style="flex:1;min-width:0"><div class="t">${esc(c.title)}</div>
+    <small>${num(c.views)} views · ${num(c.followers)} followers · ${c.ratio}x · ${c.age_days}d</small><br>
+    <a href="${esc(c.url)}" target="_blank">open</a> <button class="ghost" data-cand="${i}">Start</button></div></div>`).join('') || '<small>Run Find.</small>';
+  if (!$('#tags').value) $('#tags').placeholder = 'reselling depop vinted…';
+}
+
+let dirty = false;
+async function openJob(id) {
+  const keep = dirty && job?.id === id ? collectShots() : null, ask = $('#ask')?.value;
+  job = await api(`/api/job/${id}`);
+  if (keep) job.plan = keep; else dirty = false;
+  document.querySelectorAll('[data-job]').forEach((el) => el.classList.toggle('on', el.dataset.job === id));
+  render();
+  if (ask) $('#ask').value = ask;
+}
+document.addEventListener('input', (e) => { if (e.target.closest('.shot')) dirty = true; });
+
+function render() {
+  const j = job, f = (p, t) => `/f/jobs/${j.id}/${p}?t=${t}`;
+  const remix = j.has.final >= j.has.draft ? ['out/video.mp4', j.has.final, 'Remix (full)'] : ['out/video-lo.mp4', j.has.draft, 'Remix (240p draft)'];
+  $('#main').innerHTML = `
+    <h2>${esc(j.id)}</h2>
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">${esc(j.title || j.id)}</div>
+    <small>${num(j.views)} views · ${num(j.followers)} followers ${j.url ? `· <a href="${esc(j.url)}" target="_blank">source</a>` : ''}</small>
+    <div class="vids" style="margin-top:14px">
+      ${j.has.source ? `<figure><video controls preload="metadata" src="${f('source.mp4', j.has.source)}"></video><figcaption>Original</figcaption></figure>` : ''}
+      ${remix[1] ? `<figure><video controls preload="metadata" src="${f(remix[0], remix[1])}"></video><figcaption>${remix[2]}</figcaption></figure>` : ''}
+    </div>
+    <h2>Pipeline <select id="brand" style="margin-left:8px;text-transform:none">${state.brands.map((b) => `<option ${b === brand() ? 'selected' : ''}>${b}</option>`).join('')}</select></h2>
+    <div class="steps">${STEPS.map(([key, step, name, help]) => `<div class="step ${j.has[key] ? 'done' : ''}">
+      <b>${name}</b><small>${help}</small>
+      <button class="ghost" data-step="${step}" ${busy || (step === 'download' && !j.url) ? 'disabled' : ''}>${j.has[key] ? 'Run again' : 'Run'}</button></div>`).join('')}</div>
+    <h2>Ask Claude</h2>
+    <div class="row"><textarea id="ask" rows="2" placeholder="e.g. make shot 7 brighter and slow the push-in"></textarea><button id="askgo" ${busy ? 'disabled' : ''}>Send</button></div>
+    <div class="tabs">${['shots', 'breakdown', 'script', 'fix'].map((t) => `<button data-tab="${t}" class="${tab === t ? 'on' : ''}">${{ shots: 'Shots', breakdown: 'Breakdown', script: 'Script', fix: 'Fix notes' }[t]}</button>`).join('')}</div>
+    <div id="tab"></div>`;
+  renderTab();
+}
+
+function renderTab() {
+  const el = $('#tab');
+  if (tab !== 'shots') return el.innerHTML = job.docs[tab] ? `<pre class="doc">${esc(job.docs[tab])}</pre>` : '<p class="empty">Not written yet.</p>';
+  const p = job.plan;
+  if (!p) return el.innerHTML = '<p class="empty">No shots.json yet. Run Shot plan.</p>';
+  const total = p.shots.reduce((a, s) => a + s.dur, 0) + (p.screens ?? []).reduce((a, s) => a + s.dur, 0) + (p.end?.dur ?? 0);
+  el.innerHTML = `<div class="row" style="align-items:center"><small style="flex:1">${p.shots.length} shots · ${total.toFixed(2)}s total. Changing a line deletes its audio, so run Voice + sfx after saving.</small>
+    <button id="save">Save shots</button></div>` + p.shots.map((s, si) => `<div class="shot" data-si="${si}">
+      <div class="n">${s.id}</div>
+      <div>
+        ${job.previews[s.id] ? `<img src="/f/jobs/${job.id}/remix/preview/${pad(s.id)}.jpg?t=${job.previews[s.id]}" alt="">` : ''}
+        <div class="row" style="align-items:center"><small>dur</small><input type="number" step="0.05" min="0.2" data-k="dur" value="${s.dur}">
+          <span style="flex:1"></span>
+          <button class="ghost" data-shot="${s.id}" data-run="preview" ${busy ? 'disabled' : ''}>Preview frames</button>
+          <button class="ghost" data-shot="${s.id}" data-run="shotlo" ${busy ? 'disabled' : ''}>Render 240p</button></div>
+        <div class="meta">${esc(s.motion || s.image || '')}</div>
+        ${(s.lines ?? []).map((l, li) => `<div class="line"><span>${esc(l.who)}</span><input type="number" step="0.05" data-li="${li}" data-k="at" value="${l.at}"><input data-li="${li}" data-k="text" value="${esc(l.text)}"></div>`).join('')}
+      </div></div>`).join('');
+}
+
+function collectShots() {
+  const p = structuredClone(job.plan);
+  document.querySelectorAll('.shot').forEach((row) => {
+    const s = p.shots[row.dataset.si];
+    row.querySelectorAll('input').forEach((i) => {
+      const v = i.type === 'number' ? +i.value : i.value;
+      i.dataset.li ? (s.lines[i.dataset.li][i.dataset.k] = v) : (s[i.dataset.k] = v);
+    });
+  });
+  return p;
+}
+
+document.addEventListener('click', async (e) => {
+  const t = e.target.closest('[data-job],[data-cand],[data-step],[data-tab],[data-run],#find,#dl,#askgo,#save,#stop');
+  if (!t) return;
+  if (t.dataset.job) return openJob(t.dataset.job);
+  if (t.dataset.cand) return go('download', { job: undefined, url: state.candidates[t.dataset.cand].url });
+  if (t.dataset.step === 'download') return go('download', { job: undefined, url: job.url });
+  if (t.dataset.step) return go(t.dataset.step);
+  if (t.dataset.tab) { tab = t.dataset.tab; document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b === t)); return renderTab(); }
+  if (t.dataset.run) return go(t.dataset.run, { shot: +t.dataset.shot });
+  if (t.id === 'find') return go('find', { job: undefined, tags: $('#tags').value || $('#tags').placeholder });
+  if (t.id === 'dl') return go('download', { job: undefined, url: $('#url').value.trim() });
+  if (t.id === 'askgo') return $('#ask').value.trim() && go('ask', { text: $('#ask').value.trim() });
+  if (t.id === 'stop') return fetch('/api/stop', { method: 'POST' });
+  if (t.id === 'save') {
+    try { await api(`/api/job/${job.id}`, { method: 'PUT', body: JSON.stringify(collectShots()) }); dirty = false; await openJob(job.id); }
+    catch (err) { alert(err.message); }
+  }
+});
+document.addEventListener('change', (e) => { if (e.target.id === 'brand') localStorage.setItem('brand', e.target.value); });
+
+const logEl = $('#log');
+const addLog = (l) => { const end = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 20; logEl.textContent += l + '\n'; if (end) logEl.scrollTop = logEl.scrollHeight; };
+function setBusy(b, label) {
+  busy = b;
+  $('#status').textContent = b ? `running: ${label}` : label ? `last: ${label}` : 'idle';
+  $('#stop').hidden = !b;
+  $('#find').disabled = $('#dl').disabled = b;
+  document.querySelectorAll('[data-step],[data-run],#askgo').forEach((el) => el.disabled = b || (el.dataset.step === 'download' && !job?.url));
+}
+const es = new EventSource('/api/log');
+es.addEventListener('start', (e) => { const d = JSON.parse(e.data); logEl.textContent = ''; (d.lines ?? []).forEach(addLog); setBusy(true, d.label); });
+es.addEventListener('line', (e) => addLog(JSON.parse(e.data)));
+es.addEventListener('done', async (e) => {
+  const d = JSON.parse(e.data);
+  addLog(d.code === 0 ? '✓ finished' : `✗ exit ${d.code}`);
+  setBusy(false, `${d.label} ${d.code === 0 ? '✓' : '✗'}`);
+  await loadState();
+  if (job) openJob(job.id);
+});
+
+loadState();
+</script>
+</body>
+</html>
