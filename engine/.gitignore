@@ -1,0 +1,6 @@
+node_modules/
+models/
+jobs/
+.env
+brands/salelinx.md
+notes/cofounder-voice-note.opus
